@@ -9,12 +9,16 @@ using Microsoft.Bot.Connector;
 using Newtonsoft.Json;
 using kcBot;
 using System.Collections.Generic;
+using Microsoft.Bot.Builder.Dialogs;
+using kcBot.Models;
 
 namespace kcBot
 {
     [BotAuthentication]
     public class MessagesController : ApiController
     {
+        
+
         /// <summary>
         /// POST: api/Messages
         /// Receive a message from a user and reply to it
@@ -23,38 +27,60 @@ namespace kcBot
         {
             if (activity.Type == ActivityTypes.Message)
             {
+                // await Conversation.SendAsync(activity, () => new LUIS());
                 ConnectorClient connector = new ConnectorClient(new Uri(activity.ServiceUrl));
 
-                // return our reply to the user
-                string companyName = activity.Text;
-                Activity weatherReply = activity.CreateReply($"{companyName} stock");
-                weatherReply.Recipient = activity.From;
-                weatherReply.Type = "message";
-                weatherReply.Attachments = new List<Attachment>();
+                MessageObject.RootObject rootObject = await LUIS.interpretMessage(activity.Text);
 
-                List<CardImage> cardImages = new List<CardImage>();
-                cardImages.Add(new CardImage(url: $"http://ichart.finance.yahoo.com/b?s={companyName}"));
+                Activity reply;
+               
+               if(rootObject.topScoringIntent.intent == "getStockPrice")
+               {
+                    if (rootObject.entities.Length > 0)
+                    {
+                        string tickerSymbol = rootObject.entities[0].entity;
+                        reply = activity.CreateReply($"{tickerSymbol} stock");
+                        reply.Recipient = activity.From;
+                        reply.Type = "message";
+                        reply.Attachments = new List<Attachment>();
 
-                List<CardAction> cardButtons = new List<CardAction>();
-                CardAction plButton = new CardAction()
+                        List<CardImage> cardImages = new List<CardImage>();
+                        cardImages.Add(new CardImage(url: $"http://ichart.finance.yahoo.com/b?s={tickerSymbol}"));
+
+                        List<CardAction> cardButtons = new List<CardAction>();
+                        CardAction plButton = new CardAction()
+                        {
+                            Value = $"http://money.cnn.com/quote/quote.html?symb={tickerSymbol}",
+                            Type = "openUrl",
+                            Title = "More Info"
+                        };
+                        cardButtons.Add(plButton);
+                        string stockInfo = await Sotck.getStockAsync(tickerSymbol);
+                        HeroCard plCard = new HeroCard()
+                        {
+                            Title = stockInfo,
+                            Images = cardImages,
+                            Buttons = cardButtons
+                        };
+
+                        Attachment plAttachment = plCard.ToAttachment();
+                        reply.Attachments.Add(plAttachment);
+                    }else
+                    {
+                        reply = activity.CreateReply("We were unable to identify the ticker symbol");
+                    }
+                   
+                }else
                 {
-                    Value = $"http://money.cnn.com/quote/quote.html?symb={companyName}",
-                    Type = "openUrl",
-                    Title = "More Info"
-                };
-                cardButtons.Add(plButton);
-                string stockInfo = await Sotck.getStockAsync(activity.Text);
-                HeroCard plCard = new HeroCard()
-                {
-                    Title = stockInfo,
-                    Images = cardImages,
-                    Buttons = cardButtons
-                };
+                    reply = activity.CreateReply($"I'm sorry your intent is not clear");
+                }
+                
 
-                Attachment plAttachment = plCard.ToAttachment();
-                weatherReply.Attachments.Add(plAttachment);
-                await connector.Conversations.SendToConversationAsync(weatherReply);
+                //------------------------------------------------------------------
 
+            
+                //------------------------------------------------------------------
+await connector.Conversations.SendToConversationAsync(reply);
                 // return our reply to the user
                 //Activity reply = activity.CreateReply($"You sent {activity.Text} which was {length} characters!");
                 //string returnString = await Sotck.getStockAsync(activity.Text);
