@@ -119,6 +119,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="App_Start\WebApiConfig.cs" />
+    <Compile Include="LUIS.cs" />
+    <Compile Include="Models\MessageObject.cs" />
     <Compile Include="Sotck.cs" />
     <Compile Include="Controllers\MessagesController.cs" />
     <Compile Include="Global.asax.cs">
