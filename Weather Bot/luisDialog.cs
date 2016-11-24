@@ -52,21 +52,29 @@ namespace kcBot
             string password = await answer;
             string userName = "";
             context.UserData.TryGetValue("UserName", out userName);
-
-            string passwordInDB = await AzureManager.AzureManagerInstance.getPassward(userName);
-
             string endOutput = "";
 
-            if (password.Equals(passwordInDB))
+            try
             {
-                context.UserData.SetValue("loggedIn", true);
-                endOutput = $"You have successfully loged in {userName}";
-            }
-            else
-            {
-                endOutput = $"You were not successfully at login in";
-            }
+                string passwordInDB = await AzureManager.AzureManagerInstance.getPassward(userName);
 
+                
+
+                if (password.Equals(passwordInDB))
+                {
+                    context.UserData.SetValue("loggedIn", true);
+                    endOutput = $"You have successfully loged in {userName}";
+                }
+                else
+                {
+                    endOutput = $"You were not successfully at loging in, try again";
+                }
+            }
+            catch(Exception ex)
+            {
+                endOutput = $"This name does not exist in the database.";
+            }
+             
 
             await context.PostAsync(endOutput);
             context.Wait(MessageReceived);
