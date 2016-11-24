@@ -5,9 +5,9 @@ using System.Web;
 
 namespace kcBot.Models
 {
-    
-   public class MessageObject
-   {
+
+    public class MessageObject
+    {
         public class RootObject
         {
             public string query { get; set; }
@@ -37,6 +37,6 @@ namespace kcBot.Models
             public float score { get; set; }
         }
     }
-     
+
 
 }

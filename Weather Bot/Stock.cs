@@ -40,10 +40,9 @@ namespace kcBot
             {
                 returnString = "Stock: " + fullName + " (" + tickerSymbol.ToUpper() + ") Price: " + price;
             }
-            
+
             return returnString;
         }
     }
-
-
+    
 }
