@@ -140,15 +140,30 @@ namespace kcBot
             }
         }
 
+        [LuisIntent("getBalance")]
+        public async Task getBalance(IDialogContext context, LuisResult result)
+        {
+            string endOutput = string.Empty;
+            string userName = string.Empty;
+            if (context.UserData.TryGetValue("UserName", out userName))
+            {
+               double balance = await AzureManager.AzureManagerInstance.getBalance(userName);
+                endOutput = balance.ToString();
+            }
+            else
+            {
+                endOutput = "Please login before trying to check your bank balance.";
+            }
+            await context.PostAsync(endOutput);
+            context.Wait(MessageReceived);
+        }
+
 
 
         [LuisIntent("")]
         public async Task None(IDialogContext context, LuisResult result)
         {
-
-
-            await context.PostAsync($"I have no idea what you are talking about.");
-            context.Wait(MessageReceived);
+            await context.PostAsync($"Your intent is not clear. Please rephrase the sentence.");
             context.Wait(MessageReceived);
         }
 
@@ -174,55 +189,136 @@ namespace kcBot
         }
 
 
+        [LuisIntent("greeting")]
+        public async Task Greet(IDialogContext context, LuisResult result)
+        {
+            bool Welcomed = false;
+
+            if (context.UserData.TryGetValue("Welcomed", out Welcomed))
+            {
+
+                await context.PostAsync("Hi again. If you need help let us know");
+                context.Wait(MessageReceived);
+            }
+            else
+            {
+
+                context.UserData.SetValue<bool>("Welcome", true);
+
+                Microsoft.Bot.Connector.Activity reply = (Microsoft.Bot.Connector.Activity)context.MakeMessage();
+
+                reply.Type = "message";
+
+                reply.Attachments = new List<Attachment>();
+
+                await context.PostAsync("Hello, my name is Cassey. I am a chatBot and a representive for the Contoso Bank.\n I can help you with stocks and transfers.");
+                // await context.PostAsync("Hello, my name is Cassey. I am a chatBot and a representive for the 123 Bank.\n I can help you with the following:\n stocks (e.g. what's the price of MSFT or show me a chart of MSFT)\n If you login I can also help you with transfers.\n");
+                reply.Type = "message";
+                reply.Attachments = new List<Attachment>();
+
+                List<CardImage> cardImages = new List<CardImage>();
+                cardImages.Add(new CardImage(url: "https://cdn.pixabay.com/photo/2014/12/21/23/57/money-576443_960_720.png"));
+
+                List<CardAction> cardButtons = new List<CardAction>();
+                CardAction plButton = new CardAction()
+                {
+                    Value = "http://www.hasbro.com/en-us/brands/monopoly",
+                    Type = "openUrl",
+                    Title = "Bank website"
+                };
+                cardButtons.Add(plButton);
+
+                HeroCard plCard = new HeroCard()
+                {
+                    Title = "Contoso Bank",
+                    Text = "Our mission here at the Contoso Bank is to make every customer feel like our only customer.",
+                    Images = cardImages,
+                    Buttons = cardButtons
+                };
+
+                Attachment plAttachment = plCard.ToAttachment();
+                reply.Attachments.Add(plAttachment);
+                await context.PostAsync(reply);
+                context.Wait(MessageReceived);
+            }
+        }
 
 
 
-
-
+        private string reciever;
+        private double transferAmount;
         [LuisIntent("transfer")]
         public async Task transfer(IDialogContext context, LuisResult result)
         {
+            string endOutput = "";
             string userName = "";
             if (context.UserData.TryGetValue("UserName", out userName))
             {
-                double transferAmount = 0;
+                transferAmount = 0;
                 string strAmount = result.Entities.FirstOrDefault(e => e.Type == "number").Entity;
-                string reciever = result.Entities.FirstOrDefault(e => e.Type == "reciever").Entity;
+                reciever = result.Entities.FirstOrDefault(e => e.Type == "reciever").Entity;
 
                 if (result.Entities.Count == 2 && double.TryParse(strAmount, out transferAmount))
                 {
                     double currentBalance = await AzureManager.AzureManagerInstance.getBalance(userName);
                     if (currentBalance > transferAmount)
                     {
-                        // here the database records are up dated to reflect the transfer
-                        // reciever = result.Entities[1].Entity;
-                        await AzureManager.AzureManagerInstance.updateBalance(reciever, transferAmount);
-                        transferAmount = transferAmount * -1;
-                        await AzureManager.AzureManagerInstance.updateBalance(userName, transferAmount);
+
+                        PromptDialog.Confirm(context, AfterConfirmingTransfer, $"Do you want to confirm the transfer of ${transferAmount} to {reciever}?", promptStyle: PromptStyle.None);
+
+                        
                     }
                     else
                     {
-                        string endOutput = "You do not have sufficient funds";
+                        endOutput = "You do not have sufficient funds";
                         await context.PostAsync(endOutput);
                         context.Wait(MessageReceived);
+                        
                     }
                 }
                 else
                 {
-                    string endOutput = "Please try again (e.g. I want to transfer 100 dallors to Bob)";
+                    endOutput = "Please try again (e.g. I want to transfer $100 dollars to Bob)";
                     await context.PostAsync(endOutput);
                     context.Wait(MessageReceived);
+
                 }
 
 
             }
             else
             {
-                string endOutput = "Please login before trying to make a transfer";
+                endOutput = "Please login before trying to make a transfer";
                 await context.PostAsync(endOutput);
                 context.Wait(MessageReceived);
+
             }
 
+        }
+
+
+
+        public async Task AfterConfirmingTransfer(IDialogContext context, IAwaitable<bool> confirmation)
+        {
+            string userName = "";
+            if (await confirmation && context.UserData.TryGetValue("UserName", out userName))
+            {
+                
+                await AzureManager.AzureManagerInstance.updateBalance(reciever, transferAmount);
+                transferAmount = transferAmount * -1;
+                await AzureManager.AzureManagerInstance.updateBalance(userName, transferAmount);
+
+                transferAmount = transferAmount * -1;
+                String endOutput = $"The transfer of ${transferAmount} to {reciever} was successful.";
+                await context.PostAsync(endOutput);
+            }
+            else
+            {
+                await context.PostAsync("The transfer was canceled.");
+            }
+
+            context.Wait(MessageReceived);
+           
         }
 
     }   
