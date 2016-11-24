@@ -26,5 +26,8 @@ namespace kcBot.DataModels
 
         [JsonProperty(PropertyName = "Balance")]
         public double Balance { get; set; }
+
+        [JsonProperty(PropertyName = "Password")]
+        public string Password { get; set; }
     }
 }

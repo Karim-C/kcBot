@@ -49,21 +49,47 @@ namespace kcBot
         public async Task login(IDialogContext context, LuisResult result)
         {
 
-            PromptDialog.Text(context, ResumeAfter, "Please enter your name", "Try again",3);
+            PromptDialog.Text(context, ResumeAfterUserName, "Please enter your name", "Try again",3);
+           
         }
 
-        private async Task ResumeAfter(IDialogContext context, IAwaitable<string> answer)
+        private async Task ResumeAfterUserName(IDialogContext context, IAwaitable<string> answer)
         {
             string name = await answer;
             context.UserData.SetValue("UserName", name);
 
-            var text = $"You have successfully loged in {name}";
+            var text = $"Name: {name}";
             await context.PostAsync(text);
+            PromptDialog.Text(context, ResumeAfterPassword, "Please enter your password", "Try again", 3);
+           // context.Wait(MessageReceived);
+        }
+
+        private async Task ResumeAfterPassword(IDialogContext context, IAwaitable<string> answer)
+        {
+            string password = await answer;
+            string userName = "";
+            context.UserData.TryGetValue("UserName", out userName);
+
+            string passwordInDB = await AzureManager.AzureManagerInstance.getPassward(userName);
+
+            string endOutput = "";
+
+            if (password.Equals(passwordInDB))
+            {
+                context.UserData.SetValue("loggedIn", true);
+                endOutput = $"You have successfully loged in {userName}";
+            }else
+            {
+                endOutput = $"You were not successfully at login in";
+            }
+
+            
+            await context.PostAsync(endOutput);
             context.Wait(MessageReceived);
         }
-    
 
-    [LuisIntent("getStockChart")]
+
+        [LuisIntent("getStockChart")]
         public async Task getStockChart(IDialogContext context, LuisResult result)
         {
             string tickerSymbol = "";

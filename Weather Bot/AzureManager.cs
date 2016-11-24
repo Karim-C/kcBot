@@ -72,6 +72,19 @@ namespace kcBot
             return 0;
         }
 
+        public async Task<string> getPassward(string Name)
+        {
+            moodTable bankRecord = (await bankRecordTable.Where(p => p.Name == Name).ToEnumerableAsync()).Single();
+
+            if (bankRecord != null)
+            {
+                return bankRecord.Password;
+
+            }
+
+            return "";
+        }
+
         public async Task<List<moodTable>> GetBankRecords()
         {
             return await this.bankRecordTable.ToListAsync();
