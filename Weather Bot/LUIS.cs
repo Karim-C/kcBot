@@ -6,25 +6,7 @@ using System.Threading.Tasks;
 
 namespace kcBot
 {
-    //[LuisModel("40966f67-3104-4eb2-983e-27f5648bb0a8", "b36fc035caad4d26abbe170b9cc4a05e")]
-    //[Serializable]
-    //public class LUIS : LuisDialog<object>
-    //{
-    //    [LuisIntent("getStockPrice")]
-    //    public async Task getStockPrice(IDialogContext context, LuisServiceResult result)
-    //    {
-    //        await context.PostAsync("hello world");
-    //        context.Wait(MessageReceived);
-    //    }
-
-    //    [LuisIntent("")]
-    //    public async Task None(IDialogContext context, LuisServiceResult result)
-    //    {
-    //        await context.PostAsync("Nada");
-    //        context.Wait(MessageReceived);
-    //    }
-    //}
-
+    // class not used anymore   
     public class LUIS
     {
         public static async Task<MessageObject.RootObject> interpretMessage(string message)

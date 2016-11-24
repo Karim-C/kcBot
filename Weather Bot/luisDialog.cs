@@ -11,7 +11,6 @@ using System.Threading.Tasks;
 namespace kcBot
 {
     [LuisModel("40966f67-3104-4eb2-983e-27f5648bb0a8", "b36fc035caad4d26abbe170b9cc4a05e")]
-    //[LuisModel("40966f67-3104-4eb2-983e-627f5648bb0a8", "b36fc035c6aad4d26abbe170b9cc4a05e")]
     [Serializable]
     public class luisDialog : LuisDialog<object>
     {
@@ -21,31 +20,11 @@ namespace kcBot
         public async Task Help(IDialogContext context, LuisResult result)
         {
 
-            string reply = "help";
+            string reply = "You can ask for the price of stocks and to see the charts. You can check your bank balance and transfer money to someone else.";
             await context.PostAsync(reply);
             context.Wait(MessageReceived);
         }
-        /*
-        [LuisIntent("login")]
-        public async Task login(IDialogContext context, LuisResult result)
-        {
-            string userName = "";
-            if (!(context.UserData.TryGetValue("UserName", out userName)))
-            {
-                PromptDialog.Text(context, AfterUserInputUserName, "Please enter your name", "Try again message", 2);
-            }
-            context.Wait(MessageReceived);
-
-
-        }
-
-        private ResumeAfter<string> AfterUserInputUserName(IDialogContext context, IAwaitable<string> result)
-        {
-
-            context.UserData.SetValue("UserName", result);
-
-        }
-        */
+        
         [LuisIntent("login")]
         public async Task login(IDialogContext context, LuisResult result)
         {
@@ -203,7 +182,7 @@ namespace kcBot
             else
             {
 
-                context.UserData.SetValue<bool>("Welcome", true);
+                context.UserData.SetValue("Welcomed", true);
 
                 Microsoft.Bot.Connector.Activity reply = (Microsoft.Bot.Connector.Activity)context.MakeMessage();
 
@@ -217,7 +196,7 @@ namespace kcBot
                 reply.Attachments = new List<Attachment>();
 
                 List<CardImage> cardImages = new List<CardImage>();
-                cardImages.Add(new CardImage(url: "https://cdn.pixabay.com/photo/2014/12/21/23/57/money-576443_960_720.png"));
+                cardImages.Add(new CardImage(url: "https://cdn.pixabay.com/photo/2013/07/12/14/07/bag-147782_640.png"));
 
                 List<CardAction> cardButtons = new List<CardAction>();
                 CardAction plButton = new CardAction()
