@@ -148,7 +148,7 @@ namespace kcBot
             if (context.UserData.TryGetValue("UserName", out userName))
             {
                double balance = await AzureManager.AzureManagerInstance.getBalance(userName);
-                endOutput = balance.ToString();
+                endOutput = "$" + balance.ToString();
             }
             else
             {
