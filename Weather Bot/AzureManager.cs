@@ -1,9 +1,7 @@
 ﻿using Microsoft.WindowsAzure.MobileServices;
 using kcBot.DataModels;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace kcBot
@@ -17,8 +15,7 @@ namespace kcBot
 
         private AzureManager()
         {
-            //http://moodtime.azurewebsites.net
-            //http://hellotheretest.azurewebsites.net
+
             this.client = new MobileServiceClient("http://moodtime.azurewebsites.net");
             this.bankRecordTable = this.client.GetTable<moodTable>();
         }
@@ -41,9 +38,22 @@ namespace kcBot
             }
         }
 
-        public async Task AddTimeline(moodTable bankRecord)
+        public async Task AddBankRecord(string userName, string password)
         {
-            await this.bankRecordTable.InsertAsync(bankRecord);
+            moodTable record = new moodTable()
+            {
+                Name = userName,
+                Balance = 0,
+                Password = password
+            };
+
+            await this.bankRecordTable.InsertAsync(record);
+        }
+
+        public async Task DeleteBankRecord(string Name)
+        {
+            moodTable bankRecord = (await bankRecordTable.Where(p => p.Name == Name).ToEnumerableAsync()).Single();
+            await this.bankRecordTable.DeleteAsync(bankRecord);
         }
 
         public async Task updateBalance(string Name, double amount)

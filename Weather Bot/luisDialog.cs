@@ -7,6 +7,8 @@ using System.Collections.Generic;
 using System.EnterpriseServices;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Net.Http;
+
 
 namespace kcBot
 {
@@ -16,11 +18,12 @@ namespace kcBot
     {
 
 
+
         [LuisIntent("help")]
         public async Task Help(IDialogContext context, LuisResult result)
         {
 
-            string reply = "You can ask for the price of stocks and to see the charts. You can check your bank balance and transfer money to someone else.";
+            string reply = "You can ask for the price of stocks and to see the charts. You can check your bank balance and transfer money to someone else. You can also create an account or delete your current account.";
             await context.PostAsync(reply);
             context.Wait(MessageReceived);
         }
@@ -41,7 +44,7 @@ namespace kcBot
             var text = $"Name: {name}";
             await context.PostAsync(text);
             PromptDialog.Text(context, ResumeAfterPassword, "Please enter your password", "Try again", 3);
-            // context.Wait(MessageReceived);
+           
         }
 
         private async Task ResumeAfterPassword(IDialogContext context, IAwaitable<string> answer)
@@ -142,6 +145,7 @@ namespace kcBot
         [LuisIntent("")]
         public async Task None(IDialogContext context, LuisResult result)
         {
+
             await context.PostAsync($"Your intent is not clear. Please rephrase the sentence.");
             context.Wait(MessageReceived);
         }
@@ -298,6 +302,100 @@ namespace kcBot
 
             context.Wait(MessageReceived);
            
+        }
+
+        //----------------------------------------
+
+
+
+        [LuisIntent("delete")]
+        public async Task Delete(IDialogContext context, LuisResult result)
+        {
+            bool loggedIn = false;
+            string userName = "";
+            if (context.UserData.TryGetValue("loggedIn", out loggedIn))
+            {
+                if (context.UserData.TryGetValue("loggedIn", out userName))
+                {
+                    PromptDialog.Confirm(context, AfterConfirmingDelete, $"Please confirm that you want to delete your account (This is an irreversible action)", promptStyle: PromptStyle.None);
+
+                }
+            }
+            else
+            {
+                string reply = "Please login before trying to delete your account";
+                await context.PostAsync(reply);
+                context.Wait(MessageReceived);
+            }
+
+            
+        }
+
+
+
+        public async Task AfterConfirmingDelete(IDialogContext context, IAwaitable<bool> confirmation)
+        {
+            string userName = "";
+            if (await confirmation && context.UserData.TryGetValue("UserName", out userName))
+            {
+
+                await AzureManager.AzureManagerInstance.DeleteBankRecord(userName);
+                String endOutput = $"Deletion was successful.";
+                context.UserData.RemoveValue("UserName");
+                await context.PostAsync(endOutput);
+            }
+            else
+            {
+                await context.PostAsync("Deletion was canceled.");
+            }
+
+            context.Wait(MessageReceived);
+
+        }
+
+        // --------------------------------------------
+
+        [LuisIntent("create")]
+        public async Task Create(IDialogContext context, LuisResult result)
+        {
+
+            PromptDialog.Text(context, ResumeAfterUserNameCreate, "Please enter your name", "Try again", 3);
+
+        }
+
+        private async Task ResumeAfterUserNameCreate(IDialogContext context, IAwaitable<string> answer)
+        {
+            string name = await answer;
+            context.UserData.SetValue("UserName", name);
+
+            var text = $"Name: {name}";
+            await context.PostAsync(text);
+            PromptDialog.Text(context, ResumeAfterPasswordCreate, "Please enter your password", "Try again", 3);
+
+        }
+
+        private async Task ResumeAfterPasswordCreate(IDialogContext context, IAwaitable<string> answer)
+        {
+            string password = await answer;
+            string userName = "";
+            string endOutput = "";
+            context.UserData.TryGetValue("UserName", out userName);
+
+            try
+            {
+                await AzureManager.AzureManagerInstance.AddBankRecord(userName, password);
+
+                context.UserData.SetValue("loggedIn", true);
+                endOutput = $"{userName}, you have successfully created an account with us here at Contoso Bank, congratulations.";
+            }
+            catch(Exception ex)
+            {
+                string errMsg = ex.Message;
+                endOutput = $"There was an error: {errMsg}, try again.";
+            }
+            
+            await context.PostAsync(endOutput);
+            context.Wait(MessageReceived);
         }
 
     }   
