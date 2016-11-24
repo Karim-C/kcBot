@@ -19,31 +19,52 @@ namespace kcBot
         [LuisIntent("help")]
         public async Task Help(IDialogContext context, LuisResult result)
         {
-            var reply = context.MakeMessage();
-            reply.Attachments = new List<Attachment>();
-            List<CardImage> images = new List<CardImage>();
-            CardImage ci = new CardImage("http://intelligentlabs.co.uk/images/IntelligentLabs-White-Small.png");
-            images.Add(ci);
-            CardAction ca = new CardAction()
-            {
-                Title = "Visit Support",
-                Type = "openUrl",
-                Value = "http://www.intelligentlabs.co.uk"
-            };
-            ThumbnailCard tc = new ThumbnailCard()
-            {
-                Title = "Need help?",
-                Subtitle = "Go to our main site support.",
-                Images = images,
-                Tap = ca
-            };
-            reply.Attachments.Add(tc.ToAttachment());
+
+            string reply = "help";
             await context.PostAsync(reply);
             context.Wait(MessageReceived);
         }
+        /*
+        [LuisIntent("login")]
+        public async Task login(IDialogContext context, LuisResult result)
+        {
+            string userName = "";
+            if (!(context.UserData.TryGetValue("UserName", out userName)))
+            {
+                PromptDialog.Text(context, AfterUserInputUserName, "Please enter your name", "Try again message", 2);
+            }
+            context.Wait(MessageReceived);
 
-        [LuisIntent("getStockChart")]
-        public async Task getStockChart(IDialogContext context, LuisResult result) 
+
+        }
+
+        private ResumeAfter<string> AfterUserInputUserName(IDialogContext context, IAwaitable<string> result)
+        {
+
+            context.UserData.SetValue("UserName", result);
+
+        }
+        */
+        [LuisIntent("login")]
+        public async Task login(IDialogContext context, LuisResult result)
+        {
+
+            PromptDialog.Text(context, ResumeAfter, "Please enter your name", "Try again",3);
+        }
+
+        private async Task ResumeAfter(IDialogContext context, IAwaitable<string> answer)
+        {
+            string name = await answer;
+            context.UserData.SetValue("UserName", name);
+
+            var text = $"You have successfully loged in {name}";
+            await context.PostAsync(text);
+            context.Wait(MessageReceived);
+        }
+    
+
+    [LuisIntent("getStockChart")]
+        public async Task getStockChart(IDialogContext context, LuisResult result)
         {
             string tickerSymbol = "";
 
@@ -81,22 +102,25 @@ namespace kcBot
                 reply.Attachments.Add(plAttachment);
                 // await connector.Conversations.SendToConversationAsync(reply);
                 await context.PostAsync(reply);
+                context.Wait(MessageReceived);
             }
             else
             {
                 //reply = activity.CreateReply("We were unable to identify the ticker symbol");
                 await context.PostAsync("We were unable to identify the ticker symbol");
+                context.Wait(MessageReceived);
             }
         }
 
-        
+
 
         [LuisIntent("")]
         public async Task None(IDialogContext context, LuisResult result)
         {
 
-           
+
             await context.PostAsync($"I have no idea what you are talking about.");
+            context.Wait(MessageReceived);
             context.Wait(MessageReceived);
         }
 
@@ -111,7 +135,7 @@ namespace kcBot
                 endOutput = stockInfo;
 
                 context.UserData.SetValue<string>("tickerSymbol", tickerSymbol);
-                
+
             }
             else
             {
@@ -156,7 +180,7 @@ namespace kcBot
         {
             if (await result)
             {
-               
+
                 await context.PostAsync($"has been removed.");
             }
             else
