@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace kcBot
 {
-    // class not used anymore   
+    // class not used anymore. It has been replaced by luisDialog.cs ========================================
     public class LUIS
     {
         public static async Task<MessageObject.RootObject> interpretMessage(string message)

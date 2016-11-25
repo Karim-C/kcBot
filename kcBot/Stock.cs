@@ -9,6 +9,7 @@ namespace kcBot
 {
     public class Sotck
     {
+        // Gets the price of a stock and it's full name
         public static async Task<string> getStockAsync(string tickerSymbol)
         {
             string returnString = "";
@@ -30,7 +31,7 @@ namespace kcBot
             string linePrice = csvPrice.Split('\n')[0];
             string fullName = csvName.Split('\n')[0];
             string price = linePrice.Split(',')[1];
-            //string fullName = lineName.Split(',')[1];
+
 
             if (price == "N/A")
             {

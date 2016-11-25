@@ -15,21 +15,17 @@ namespace kcBot
 
         private AzureManager()
         {
-
             this.client = new MobileServiceClient("http://moodtime.azurewebsites.net");
             this.bankRecordTable = this.client.GetTable<moodTable>();
         }
 
-        public MobileServiceClient AzureClient
-        {
-            get { return client; }
-        }
-
+        // AzureManager is a singleton class
         public static AzureManager AzureManagerInstance
         {
             get
             {
-                if (instance == null)
+                // Checks whether the class has been instantiated
+                if (instance == null) 
                 {
                     instance = new AzureManager();
                 }
@@ -38,6 +34,13 @@ namespace kcBot
             }
         }
 
+        public MobileServiceClient AzureClient
+        {
+            get { return client; }
+        }
+
+
+        // Adds a new person to the bank database
         public async Task AddBankRecord(string userName, string password)
         {
             moodTable record = new moodTable()
@@ -50,16 +53,18 @@ namespace kcBot
             await this.bankRecordTable.InsertAsync(record);
         }
 
+        // Deletes an account from the bank database
         public async Task DeleteBankRecord(string Name)
         {
             moodTable bankRecord = (await bankRecordTable.Where(p => p.Name == Name).ToEnumerableAsync()).Single();
             await this.bankRecordTable.DeleteAsync(bankRecord);
         }
 
+        // Updates the bank balance of a specific person in the database by adding or subtracting
         public async Task updateBalance(string Name, double amount)
         {
               
-
+            // Finds the row in the database table where the name matches the given name
             moodTable bankRecord = (await bankRecordTable.Where(p => p.Name == Name).ToEnumerableAsync()).Single();
 
             if (bankRecord != null)
@@ -69,6 +74,7 @@ namespace kcBot
             }
         }
 
+        // Retrieves the bank balance of a specified person
         public async Task<double> getBalance(string Name)
         {
             moodTable bankRecord = (await bankRecordTable.Where(p => p.Name == Name).ToEnumerableAsync()).Single();
@@ -82,14 +88,14 @@ namespace kcBot
             return 0;
         }
 
-        public async Task<string> getPassward(string Name)
+        //  Gets the password stored in the database
+        public async Task<string> getPassword(string Name)
         {
             moodTable bankRecord = (await bankRecordTable.Where(p => p.Name == Name).ToEnumerableAsync()).Single();
 
             if (bankRecord != null)
             {
                 return bankRecord.Password;
-
             }
 
             return "";

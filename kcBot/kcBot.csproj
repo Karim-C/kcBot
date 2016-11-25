@@ -150,7 +150,6 @@
     <Compile Include="Models\MessageObject.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Stock.cs" />
-    <Compile Include="TransferDialog.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="packages.config" />

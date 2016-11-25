@@ -27,7 +27,7 @@ namespace kcBot
             {
                 ConnectorClient connector = new ConnectorClient(new Uri(activity.ServiceUrl));
 
-
+                // Checking whether the user submitted a photo
                 var attachedImage = activity.Attachments?.FirstOrDefault(a => a.ContentType.Contains("image"));
                 if (attachedImage != null)
                 {
@@ -36,9 +36,10 @@ namespace kcBot
                     Activity reply;
                     try
                     {
+                        // Sending photo to vision api to be analysised
                         AnalysisResult analysisResult = await VisionServiceClient.DescribeAsync(activity.Attachments[0].ContentUrl, 3);
                         reply = activity.CreateReply($"Your financial goal is to own/experience: {analysisResult.Description.Captions[0].Text}");
-                        // AzureManager.AzureManagerInstance.updateGoal($"Your financial goal is to own/experience: {analysisResult.Description.Captions[0].Text}");
+                      
                     }
                     catch (Exception ex)
                     {
@@ -49,7 +50,7 @@ namespace kcBot
                     await connector.Conversations.ReplyToActivityAsync(reply);
                     
 
-                } else
+                } else // If text is submitted (not a photo)
                 {
                     try {
                         await Conversation.SendAsync(activity, () => new luisDialog());

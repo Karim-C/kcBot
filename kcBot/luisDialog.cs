@@ -18,7 +18,7 @@ namespace kcBot
     {
 
 
-
+        // This method lets the user know what the bot can do if they ask for help
         [LuisIntent("help")]
         public async Task Help(IDialogContext context, LuisResult result)
         {
@@ -27,7 +27,8 @@ namespace kcBot
             await context.PostAsync(reply);
             context.Wait(MessageReceived);
         }
-        
+
+        // This method allows the user to login
         [LuisIntent("login")]
         public async Task login(IDialogContext context, LuisResult result)
         {
@@ -36,6 +37,7 @@ namespace kcBot
 
         }
 
+        // Starts after the user has entered their name
         private async Task ResumeAfterUserName(IDialogContext context, IAwaitable<string> answer)
         {
             string name = await answer;
@@ -43,10 +45,13 @@ namespace kcBot
 
             var text = $"Name: {name}";
             await context.PostAsync(text);
+
+            // Prompts the user to enter their password
             PromptDialog.Text(context, ResumeAfterPassword, "Please enter your password", "Try again", 3);
-           
+
         }
 
+        // Starts when the user has entered their password and checks the login information is correct
         private async Task ResumeAfterPassword(IDialogContext context, IAwaitable<string> answer)
         {
             string password = await answer;
@@ -56,40 +61,38 @@ namespace kcBot
 
             try
             {
-                string passwordInDB = await AzureManager.AzureManagerInstance.getPassward(userName);
+                string passwordInDB = await AzureManager.AzureManagerInstance.getPassword(userName);
 
-                
-
+                // Checks whether the given password matches that in the database
                 if (password.Equals(passwordInDB))
                 {
                     context.UserData.SetValue("loggedIn", true);
-                    endOutput = $"You have successfully loged in {userName}";
+                    endOutput = $"You have successfully logged in {userName}";
                 }
                 else
                 {
-                    endOutput = $"You were not successfully at loging in, try again";
+                    endOutput = $"You were not successfully at logging in, try again";
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 endOutput = $"This name does not exist in the database.";
             }
-             
 
             await context.PostAsync(endOutput);
             context.Wait(MessageReceived);
         }
 
-
+        // Displays a stock chart when asked by the user
         [LuisIntent("getStockChart")]
         public async Task getStockChart(IDialogContext context, LuisResult result)
         {
             string tickerSymbol = "";
 
+            // Ensures a ticker symbol has been specified
             if (result.Entities.Count > 0 || context.UserData.TryGetValue("tickerSymbol", out tickerSymbol))
             {
-
-
+                // First checks whether ticker symbol has been specified otherwise takes most recently specified ticker symbol
                 tickerSymbol = (result.Entities.Count > 0) ? result.Entities[0].Entity : tickerSymbol;
 
                 Microsoft.Bot.Connector.Activity reply = (Microsoft.Bot.Connector.Activity)context.MakeMessage();
@@ -118,18 +121,17 @@ namespace kcBot
 
                 Attachment plAttachment = plCard.ToAttachment();
                 reply.Attachments.Add(plAttachment);
-                // await connector.Conversations.SendToConversationAsync(reply);
                 await context.PostAsync(reply);
                 context.Wait(MessageReceived);
             }
             else
             {
-                //reply = activity.CreateReply("We were unable to identify the ticker symbol");
                 await context.PostAsync("We were unable to identify the ticker symbol");
                 context.Wait(MessageReceived);
             }
         }
 
+        // Retrieves the users bank balance form the database and displays it to them
         [LuisIntent("getBalance")]
         public async Task getBalance(IDialogContext context, LuisResult result)
         {
@@ -137,7 +139,7 @@ namespace kcBot
             string userName = string.Empty;
             if (context.UserData.TryGetValue("UserName", out userName))
             {
-               double balance = await AzureManager.AzureManagerInstance.getBalance(userName);
+                double balance = await AzureManager.AzureManagerInstance.getBalance(userName);
                 endOutput = "$" + balance.ToString();
             }
             else
@@ -149,7 +151,7 @@ namespace kcBot
         }
 
 
-
+        // When the users intent is unclear
         [LuisIntent("")]
         public async Task None(IDialogContext context, LuisResult result)
         {
@@ -158,6 +160,7 @@ namespace kcBot
             context.Wait(MessageReceived);
         }
 
+        // Retrieves the price of a stock
         [LuisIntent("getStockPrice")]
         public async Task getStockPrice(IDialogContext context, LuisResult result)
         {
@@ -179,7 +182,7 @@ namespace kcBot
             context.Wait(MessageReceived);
         }
 
-
+        // Greets the user. The first time the user greets the bot a large welcome message is displayed
         [LuisIntent("greeting")]
         public async Task Greet(IDialogContext context, LuisResult result)
         {
@@ -202,8 +205,7 @@ namespace kcBot
 
                 reply.Attachments = new List<Attachment>();
 
-                await context.PostAsync("Hello, my name is Cassey. I am a chatBot and a representive for the Contoso Bank.\n I can help you with stocks and transfers.");
-                // await context.PostAsync("Hello, my name is Cassey. I am a chatBot and a representive for the 123 Bank.\n I can help you with the following:\n stocks (e.g. what's the price of MSFT or show me a chart of MSFT)\n If you login I can also help you with transfers.\n");
+                await context.PostAsync("Hello, my name is Cassey. I am a chatBot and a representative for the Contoso Bank.\n I can help you with stocks and transfers.");
                 reply.Type = "message";
                 reply.Attachments = new List<Attachment>();
 
@@ -235,7 +237,7 @@ namespace kcBot
         }
 
 
-
+        // Allows for the transfer of money between 2 people
         private string reciever;
         private double transferAmount;
         [LuisIntent("transfer")]
@@ -249,22 +251,22 @@ namespace kcBot
                 string strAmount = result.Entities.FirstOrDefault(e => e.Type == "number").Entity;
                 reciever = result.Entities.FirstOrDefault(e => e.Type == "reciever").Entity;
 
+                // Checks that a receiver and an amount has been identified in the users message
                 if (result.Entities.Count == 2 && double.TryParse(strAmount, out transferAmount))
                 {
                     double currentBalance = await AzureManager.AzureManagerInstance.getBalance(userName);
                     if (currentBalance > transferAmount)
                     {
-
+                        
                         PromptDialog.Confirm(context, AfterConfirmingTransfer, $"Do you want to confirm the transfer of ${transferAmount} to {reciever}?", promptStyle: PromptStyle.None);
 
-                        
                     }
                     else
                     {
                         endOutput = "You do not have sufficient funds";
                         await context.PostAsync(endOutput);
                         context.Wait(MessageReceived);
-                        
+
                     }
                 }
                 else
@@ -288,13 +290,13 @@ namespace kcBot
         }
 
 
-
+        // Once the transfer has been confirmed this method starts and alters the records in the database
         public async Task AfterConfirmingTransfer(IDialogContext context, IAwaitable<bool> confirmation)
         {
             string userName = "";
             if (await confirmation && context.UserData.TryGetValue("UserName", out userName))
             {
-                
+
                 await AzureManager.AzureManagerInstance.updateBalance(reciever, transferAmount);
                 transferAmount = transferAmount * -1;
                 await AzureManager.AzureManagerInstance.updateBalance(userName, transferAmount);
@@ -309,18 +311,17 @@ namespace kcBot
             }
 
             context.Wait(MessageReceived);
-           
+
         }
 
-        //----------------------------------------
-
-
-
+        // Deletes the account of the user
         [LuisIntent("delete")]
         public async Task Delete(IDialogContext context, LuisResult result)
         {
             bool loggedIn = false;
             string userName = "";
+
+            // Checks whether the user is logged in
             if (context.UserData.TryGetValue("loggedIn", out loggedIn))
             {
                 if (context.UserData.TryGetValue("loggedIn", out userName))
@@ -336,7 +337,7 @@ namespace kcBot
                 context.Wait(MessageReceived);
             }
 
-            
+
         }
 
 
@@ -344,12 +345,17 @@ namespace kcBot
         public async Task AfterConfirmingDelete(IDialogContext context, IAwaitable<bool> confirmation)
         {
             string userName = "";
+            // Checks whether the user has confirmed the transfer and whether the users name has been stored
             if (await confirmation && context.UserData.TryGetValue("UserName", out userName))
             {
 
                 await AzureManager.AzureManagerInstance.DeleteBankRecord(userName);
                 String endOutput = $"Deletion was successful.";
+
+                // Logs the user out by clearing user information
                 context.UserData.RemoveValue("UserName");
+                context.UserData.RemoveValue("LoggenIn");
+
                 await context.PostAsync(endOutput);
             }
             else
@@ -361,8 +367,7 @@ namespace kcBot
 
         }
 
-        // --------------------------------------------
-
+        // Creates a record in the database
         [LuisIntent("create")]
         public async Task Create(IDialogContext context, LuisResult result)
         {
@@ -371,6 +376,7 @@ namespace kcBot
 
         }
 
+        // Starts when the user has entered their name and stores the information
         private async Task ResumeAfterUserNameCreate(IDialogContext context, IAwaitable<string> answer)
         {
             string name = await answer;
@@ -378,10 +384,12 @@ namespace kcBot
 
             var text = $"Name: {name}";
             await context.PostAsync(text);
+
             PromptDialog.Text(context, ResumeAfterPasswordCreate, "Please enter your password", "Try again", 3);
 
         }
 
+        // Starts when the user has entered their password and stores the information in the database
         private async Task ResumeAfterPasswordCreate(IDialogContext context, IAwaitable<string> answer)
         {
             string password = await answer;
@@ -396,15 +404,15 @@ namespace kcBot
                 context.UserData.SetValue("loggedIn", true);
                 endOutput = $"{userName}, you have successfully created an account with us here at Contoso Bank, congratulations.";
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 string errMsg = ex.Message;
                 endOutput = $"There was an error: {errMsg}, try again.";
             }
-            
+
             await context.PostAsync(endOutput);
             context.Wait(MessageReceived);
         }
 
-    }   
+    }
 }
